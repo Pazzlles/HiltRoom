@@ -25,7 +25,7 @@ class PostDetailViewModel @Inject constructor(
     private val repository: PostRepository,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
-    private val _uiState = MutableStateFlow(PostDetailUiState(postId = postId))
+    private val _uiState = MutableStateFlow(PostDetailUiState())
     val uiState: StateFlow<PostDetailUiState> = _uiState.asStateFlow()
     private var activeLoadJob: Job? = null
     private var latestRequestId: Long = 0
@@ -128,11 +128,11 @@ private fun Throwable.toUserMessage(): String {
 private fun PostDataSource.toSourceNote(): String {
     return when (this) {
         PostDataSource.Network -> {
-            "Детали загружены из сети. Room хранит данные последнего успешного поиска и может подстраховать при сбое сети."
+            "Детали загружены из сети. Room сохранил пост, чтобы его можно было открыть офлайн."
         }
 
         PostDataSource.RoomCache -> {
-            "Сеть недоступна, поэтому детали открыты из Room-кэша последнего успешного поиска."
+            "Сеть недоступна, поэтому детали открыты из ранее сохранённого Room-кэша."
         }
     }
 }

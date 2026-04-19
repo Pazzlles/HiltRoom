@@ -47,15 +47,20 @@ object AppModule {
             context,
             PostDatabase::class.java,
             DATABASE_NAME,
-        ).build()
+        )
+            // Cache data can always be restored from the network.
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
+    @Singleton
     fun provideCachedPostDao(database: PostDatabase): CachedPostDao {
         return database.cachedPostDao()
     }
 
     @Provides
+    @Singleton
     fun provideSearchCacheMetadataDao(database: PostDatabase): SearchCacheMetadataDao {
         return database.searchCacheMetadataDao()
     }

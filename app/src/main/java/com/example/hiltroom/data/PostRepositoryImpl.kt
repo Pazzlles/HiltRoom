@@ -56,7 +56,12 @@ class PostRepositoryImpl @Inject constructor(
 
         return try {
             val post = apiService.getPostDetail(id).toPostDetail()
-            cachedPostDao.upsert(post.toCachedEntity())
+            cachedPostDao.upsert(
+                post.toCachedEntity(
+                    searchQuery = DETAIL_CACHE_QUERY,
+                    updatedAtMillis = System.currentTimeMillis(),
+                ),
+            )
 
             PostDetailResult(
                 post = post,
@@ -97,28 +102,36 @@ class PostRepositoryImpl @Inject constructor(
         query: String,
         posts: List<PostListItem>,
     ) {
-        cachedPostDao.replaceAll(
-            posts.map { post -> post.toCachedEntity() },
+        val updatedAtMillis = System.currentTimeMillis()
+
+        cachedPostDao.replaceQuery(
+            searchQuery = query,
+            posts = posts.map { post ->
+                post.toCachedEntity(
+                    searchQuery = query,
+                    updatedAtMillis = updatedAtMillis,
+                )
+            },
         )
         cacheMetadataDao.upsert(
             SearchCacheMetadataEntity(
                 query = query,
-                updatedAtMillis = System.currentTimeMillis(),
+                updatedAtMillis = updatedAtMillis,
             ),
         )
     }
 
     private suspend fun loadCachedPostsForQuery(query: String): List<PostListItem>? {
-        val metadata = cacheMetadataDao.getMetadata()
+        val metadata = cacheMetadataDao.getMetadata(query)
             ?: return null
 
-        if (metadata.query != query) {
-            return null
-        }
-
-        return cachedPostDao.getAllPosts().map { entity ->
+        return cachedPostDao.getPostsByQuery(metadata.query).map { entity ->
             entity.toPostListItem()
         }
+    }
+
+    private companion object {
+        private const val DETAIL_CACHE_QUERY = "__detail__"
     }
 }
 
@@ -126,21 +139,31 @@ private fun Throwable.canFallbackToCache(): Boolean {
     return this is IOException || this is HttpException
 }
 
-private fun PostListItem.toCachedEntity(): CachedPostEntity {
+private fun PostListItem.toCachedEntity(
+    searchQuery: String,
+    updatedAtMillis: Long,
+): CachedPostEntity {
     return CachedPostEntity(
+        searchQuery = searchQuery,
         postId = id,
         userId = userId,
         title = title,
         body = body,
+        updatedAtMillis = updatedAtMillis,
     )
 }
 
-private fun PostDetail.toCachedEntity(): CachedPostEntity {
+private fun PostDetail.toCachedEntity(
+    searchQuery: String,
+    updatedAtMillis: Long,
+): CachedPostEntity {
     return CachedPostEntity(
+        searchQuery = searchQuery,
         postId = id,
         userId = userId,
         title = title,
         body = body,
+        updatedAtMillis = updatedAtMillis,
     )
 }
 

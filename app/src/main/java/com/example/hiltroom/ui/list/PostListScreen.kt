@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 
 @Immutable
 data class PostListUiState(
-    val title: String = "Posts Explorer",
     val searchQuery: String = "",
     val content: PostListContentState = PostListContentState.Loading,
 )
@@ -75,6 +74,8 @@ sealed interface PostListEvent {
     data class PostClicked(val postId: String) : PostListEvent
 }
 
+private const val POSTS_SCREEN_TITLE = "Posts Explorer"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostListScreen(
@@ -86,7 +87,7 @@ fun PostListScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(state.title) },
+                title = { Text(POSTS_SCREEN_TITLE) },
             )
         },
     ) { innerPadding ->
@@ -291,7 +292,7 @@ private fun PostListErrorState(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(onClick = onRetry) {
-                Text("Retry")
+                Text("Повторить")
             }
         }
     }

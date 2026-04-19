@@ -2,11 +2,14 @@ package com.example.hiltroom.data.local
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "cached_posts")
+@Entity(
+    tableName = "cached_posts",
+    primaryKeys = ["search_query", "post_id"],
+)
 data class CachedPostEntity(
-    @PrimaryKey
+    @ColumnInfo(name = "search_query")
+    val searchQuery: String,
     @ColumnInfo(name = "post_id")
     val postId: Int,
     @ColumnInfo(name = "user_id")
@@ -15,4 +18,6 @@ data class CachedPostEntity(
     val title: String,
     @ColumnInfo(name = "body")
     val body: String,
+    @ColumnInfo(name = "updated_at_millis")
+    val updatedAtMillis: Long,
 )

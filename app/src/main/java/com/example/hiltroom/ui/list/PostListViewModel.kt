@@ -154,11 +154,11 @@ private fun PostDataSource.toRoomNote(query: String): String {
 
     return when (this) {
         PostDataSource.Network -> {
-            "Данные пришли из сети. Room сохранил кэш последнего успешного поиска $queryLabel."
+            "Данные пришли из сети. Room сохранил кэш $queryLabel, чтобы этот запрос можно было открыть офлайн."
         }
 
         PostDataSource.RoomCache -> {
-            "Сеть сейчас недоступна, поэтому показан Room-кэш последнего успешного поиска $queryLabel."
+            "Сеть сейчас недоступна, поэтому показан ранее сохранённый Room-кэш $queryLabel."
         }
     }
 }

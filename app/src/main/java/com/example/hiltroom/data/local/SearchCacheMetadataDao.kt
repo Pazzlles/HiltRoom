@@ -7,11 +7,8 @@ import androidx.room.Query
 
 @Dao
 interface SearchCacheMetadataDao {
-    @Query(
-        "SELECT * FROM search_cache_metadata " +
-            "WHERE cache_id = 1 LIMIT 1",
-    )
-    suspend fun getMetadata(): SearchCacheMetadataEntity?
+    @Query("SELECT * FROM search_cache_metadata WHERE query = :query LIMIT 1")
+    suspend fun getMetadata(query: String): SearchCacheMetadataEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(metadata: SearchCacheMetadataEntity)

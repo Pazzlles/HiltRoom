@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
         CachedPostEntity::class,
         SearchCacheMetadataEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class PostDatabase : RoomDatabase() {
