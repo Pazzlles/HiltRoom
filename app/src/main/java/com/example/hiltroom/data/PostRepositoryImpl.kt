@@ -56,10 +56,15 @@ class PostRepositoryImpl @Inject constructor(
 
         return try {
             val post = apiService.getPostDetail(id).toPostDetail()
-            cachedPostDao.upsert(
-                post.toCachedEntity(
-                    searchQuery = DETAIL_CACHE_QUERY,
-                    updatedAtMillis = System.currentTimeMillis(),
+            val updatedAtMillis = System.currentTimeMillis()
+
+            cachedPostDao.replaceQuery(
+                searchQuery = DETAIL_CACHE_QUERY,
+                posts = listOf(
+                    post.toCachedEntity(
+                        searchQuery = DETAIL_CACHE_QUERY,
+                        updatedAtMillis = updatedAtMillis,
+                    ),
                 ),
             )
 
