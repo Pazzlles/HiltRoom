@@ -19,6 +19,9 @@ class PostRepositoryImpl @Inject constructor(
     private val cachedPostDao: CachedPostDao,
     private val cacheMetadataDao: SearchCacheMetadataDao,
 ) : PostRepository {
+    override suspend fun getLastSuccessfulSearchQuery(): String? {
+        return cacheMetadataDao.getLatestMetadata()?.query
+    }
 
     override suspend fun getPosts(query: String): PostListResult {
         val normalizedQuery = query.trim()
@@ -56,17 +59,6 @@ class PostRepositoryImpl @Inject constructor(
 
         return try {
             val post = apiService.getPostDetail(id).toPostDetail()
-            val updatedAtMillis = System.currentTimeMillis()
-
-            cachedPostDao.replaceQuery(
-                searchQuery = DETAIL_CACHE_QUERY,
-                posts = listOf(
-                    post.toCachedEntity(
-                        searchQuery = DETAIL_CACHE_QUERY,
-                        updatedAtMillis = updatedAtMillis,
-                    ),
-                ),
-            )
 
             PostDetailResult(
                 post = post,
@@ -75,7 +67,10 @@ class PostRepositoryImpl @Inject constructor(
         } catch (exception: CancellationException) {
             throw exception
         } catch (throwable: Throwable) {
-            val cachedPost = cachedPostDao.getPostById(id)
+            val cachedPost = cachedPostDao.getPostByIdForQuery(
+                searchQuery = LAST_SUCCESSFUL_SEARCH_CACHE_QUERY,
+                postId = id,
+            )
 
             if (throwable.canFallbackToCache() && cachedPost != null) {
                 PostDetailResult(
@@ -110,15 +105,15 @@ class PostRepositoryImpl @Inject constructor(
         val updatedAtMillis = System.currentTimeMillis()
 
         cachedPostDao.replaceQuery(
-            searchQuery = query,
+            searchQuery = LAST_SUCCESSFUL_SEARCH_CACHE_QUERY,
             posts = posts.map { post ->
                 post.toCachedEntity(
-                    searchQuery = query,
+                    searchQuery = LAST_SUCCESSFUL_SEARCH_CACHE_QUERY,
                     updatedAtMillis = updatedAtMillis,
                 )
             },
         )
-        cacheMetadataDao.upsert(
+        cacheMetadataDao.replace(
             SearchCacheMetadataEntity(
                 query = query,
                 updatedAtMillis = updatedAtMillis,
@@ -127,16 +122,20 @@ class PostRepositoryImpl @Inject constructor(
     }
 
     private suspend fun loadCachedPostsForQuery(query: String): List<PostListItem>? {
-        val metadata = cacheMetadataDao.getMetadata(query)
+        val metadata = cacheMetadataDao.getLatestMetadata()
             ?: return null
 
-        return cachedPostDao.getPostsByQuery(metadata.query).map { entity ->
+        if (metadata.query != query) {
+            return null
+        }
+
+        return cachedPostDao.getPostsByQuery(LAST_SUCCESSFUL_SEARCH_CACHE_QUERY).map { entity ->
             entity.toPostListItem()
         }
     }
 
     private companion object {
-        private const val DETAIL_CACHE_QUERY = "__detail__"
+        private const val LAST_SUCCESSFUL_SEARCH_CACHE_QUERY = "__last_successful_search__"
     }
 }
 

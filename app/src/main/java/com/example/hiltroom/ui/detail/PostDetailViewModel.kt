@@ -1,6 +1,9 @@
 package com.example.hiltroom.ui.detail
 
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,10 +13,6 @@ import com.example.hiltroom.data.model.PostDetail
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -25,20 +24,20 @@ class PostDetailViewModel @Inject constructor(
     private val repository: PostRepository,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
-    private val _uiState = MutableStateFlow(PostDetailUiState())
-    val uiState: StateFlow<PostDetailUiState> = _uiState.asStateFlow()
+
+    var uiState by mutableStateOf(PostDetailUiState())
+        private set
+
     private var activeLoadJob: Job? = null
     private var latestRequestId: Long = 0
 
     init {
         if (postId.isBlank()) {
-            _uiState.update { currentState ->
-                currentState.copy(
-                    content = PostDetailContentState.Error(
-                        message = "Не удалось открыть экран: отсутствует id поста в маршруте.",
-                    ),
-                )
-            }
+            uiState = uiState.copy(
+                content = PostDetailContentState.Error(
+                    message = "Не удалось открыть экран: отсутствует id поста в маршруте.",
+                ),
+            )
         } else {
             loadPost()
         }
@@ -47,13 +46,11 @@ class PostDetailViewModel @Inject constructor(
     fun onEvent(event: PostDetailEvent) {
         if (event is PostDetailEvent.RetryClicked) {
             if (postId.isBlank()) {
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        content = PostDetailContentState.Error(
-                            message = "Не удалось повторить запрос: отсутствует id поста.",
-                        ),
-                    )
-                }
+                uiState = uiState.copy(
+                    content = PostDetailContentState.Error(
+                        message = "Не удалось повторить запрос: отсутствует id поста.",
+                    ),
+                )
             } else {
                 loadPost()
             }
@@ -65,41 +62,35 @@ class PostDetailViewModel @Inject constructor(
         val requestId = ++latestRequestId
 
         activeLoadJob = viewModelScope.launch {
-            _uiState.update { currentState ->
-                currentState.copy(content = PostDetailContentState.Loading)
-            }
+            uiState = uiState.copy(content = PostDetailContentState.Loading)
 
             try {
                 val result = repository.getPostDetail(postId)
                 if (requestId != latestRequestId) return@launch
 
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        title = "Post #${result.post.id}",
-                        content = PostDetailContentState.Success(
-                            post = result.post.toUiModel(),
-                            sourceNote = result.source.toSourceNote(),
-                        ),
-                    )
-                }
+                uiState = uiState.copy(
+                    title = "Post #${result.post.id}",
+                    content = PostDetailContentState.Success(
+                        post = result.post.toUiModel(),
+                        sourceNote = result.source.toSourceNote(),
+                    ),
+                )
             } catch (exception: CancellationException) {
                 throw exception
             } catch (throwable: Throwable) {
                 if (requestId != latestRequestId) return@launch
 
                 Log.e(TAG, "Failed to load post detail for id=$postId", throwable)
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        content = PostDetailContentState.Error(
-                            message = throwable.toUserMessage(),
-                        ),
-                    )
-                }
+                uiState = uiState.copy(
+                    content = PostDetailContentState.Error(
+                        message = throwable.toUserMessage(),
+                    ),
+                )
             }
         }
     }
 
-    companion object {
+    private companion object {
         private const val TAG = "PostDetailViewModel"
     }
 }
@@ -128,11 +119,11 @@ private fun Throwable.toUserMessage(): String {
 private fun PostDataSource.toSourceNote(): String {
     return when (this) {
         PostDataSource.Network -> {
-            "Детали загружены из сети. Room сохранил пост, чтобы его можно было открыть офлайн."
+            "Детали загружены из сети. Этот пост уже есть в Room-кэше последнего успешного поиска, поэтому его можно открыть офлайн."
         }
 
         PostDataSource.RoomCache -> {
-            "Сеть недоступна, поэтому детали открыты из ранее сохранённого Room-кэша."
+            "Сеть недоступна, поэтому детали открыты из Room-кэша последнего успешного поиска."
         }
     }
 }

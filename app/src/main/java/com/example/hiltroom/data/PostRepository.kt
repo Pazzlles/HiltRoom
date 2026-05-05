@@ -5,6 +5,7 @@ import com.example.hiltroom.data.model.PostDetail
 import com.example.hiltroom.data.model.PostListItem
 
 interface PostRepository {
+    suspend fun getLastSuccessfulSearchQuery(): String?
     suspend fun getPosts(query: String): PostListResult
     suspend fun getPostDetail(postId: String): PostDetailResult
 }

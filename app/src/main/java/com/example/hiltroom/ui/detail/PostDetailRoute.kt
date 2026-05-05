@@ -1,10 +1,8 @@
 package com.example.hiltroom.ui.detail
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun PostDetailRoute(
@@ -12,10 +10,8 @@ fun PostDetailRoute(
     modifier: Modifier = Modifier,
     viewModel: PostDetailViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-
     PostDetailScreen(
-        state = state,
+        state = viewModel.uiState,
         modifier = modifier,
         onEvent = { event ->
             when (event) {

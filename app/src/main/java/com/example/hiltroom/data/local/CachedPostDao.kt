@@ -17,16 +17,16 @@ interface CachedPostDao {
 
     @Query(
         "SELECT * FROM cached_posts " +
-            "WHERE post_id = :postId " +
-            "ORDER BY updated_at_millis DESC LIMIT 1",
+            "WHERE search_query = :searchQuery AND post_id = :postId " +
+            "LIMIT 1",
     )
-    suspend fun getPostById(postId: Int): CachedPostEntity?
+    suspend fun getPostByIdForQuery(
+        searchQuery: String,
+        postId: Int,
+    ): CachedPostEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(posts: List<CachedPostEntity>)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(post: CachedPostEntity)
 
     @Query("DELETE FROM cached_posts WHERE search_query = :searchQuery")
     suspend fun deleteByQuery(searchQuery: String)
