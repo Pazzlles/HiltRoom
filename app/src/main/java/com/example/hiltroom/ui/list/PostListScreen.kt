@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -76,6 +77,10 @@ sealed interface PostListEvent {
 }
 
 private const val POSTS_SCREEN_TITLE = "Posts Explorer"
+const val POST_LIST_RETRY_BUTTON_TAG = "post_list_retry_button"
+const val POST_LIST_SUMMARY_TAG = "post_list_summary"
+const val POST_LIST_ROOM_NOTE_TAG = "post_list_room_note"
+const val POST_LIST_CARD_TAG_PREFIX = "post_list_card_"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -192,6 +197,7 @@ private fun PostListContent(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     text = summary,
+                    modifier = Modifier.testTag(POST_LIST_SUMMARY_TAG),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -205,6 +211,7 @@ private fun PostListContent(
         ) { item ->
             Card(
                 modifier = Modifier
+                    .testTag("$POST_LIST_CARD_TAG_PREFIX${item.id}")
                     .fillMaxWidth()
                     .clickable { onPostClick(item.id) },
                 colors = CardDefaults.cardColors(
@@ -294,7 +301,10 @@ private fun PostListErrorState(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Button(onClick = onRetry) {
+            Button(
+                onClick = onRetry,
+                modifier = Modifier.testTag(POST_LIST_RETRY_BUTTON_TAG),
+            ) {
                 Text("Повторить")
             }
         }
@@ -315,7 +325,9 @@ private fun RoomUsageCard(
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier
+                .testTag(POST_LIST_ROOM_NOTE_TAG)
+                .padding(14.dp),
             style = MaterialTheme.typography.bodyMedium,
         )
     }

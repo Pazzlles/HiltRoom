@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -66,6 +67,10 @@ sealed interface PostDetailEvent {
     data object RetryClicked : PostDetailEvent
 }
 
+const val POST_DETAIL_BACK_BUTTON_TAG = "post_detail_back_button"
+const val POST_DETAIL_TITLE_TAG = "post_detail_title"
+const val POST_DETAIL_BODY_TAG = "post_detail_body"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostDetailScreen(
@@ -79,7 +84,10 @@ fun PostDetailScreen(
             TopAppBar(
                 title = { Text(state.title) },
                 navigationIcon = {
-                    IconButton(onClick = { onEvent(PostDetailEvent.BackClicked) }) {
+                    IconButton(
+                        onClick = { onEvent(PostDetailEvent.BackClicked) },
+                        modifier = Modifier.testTag(POST_DETAIL_BACK_BUTTON_TAG),
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Назад",
@@ -147,11 +155,13 @@ private fun PostDetailContent(
                 ) {
                     Text(
                         text = post.title,
+                        modifier = Modifier.testTag(POST_DETAIL_TITLE_TAG),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
                         text = post.body,
+                        modifier = Modifier.testTag(POST_DETAIL_BODY_TAG),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
